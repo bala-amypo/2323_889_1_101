@@ -2,9 +2,11 @@ package com.example.demo.model;
 
 public class PredictionRule{
     private Long id;
-    private String ruleNama;
+    private String ruleName;
     @Min(1)
-    private Integer consumedQuantity;
-    private LocalDate consumedDate;
+    private Integer averageDaysWindow;
+    private Integer minDailyUsage;
+    private Integer maxDailyUsage;
+    private LocalDateTime createdAt;
     
 }

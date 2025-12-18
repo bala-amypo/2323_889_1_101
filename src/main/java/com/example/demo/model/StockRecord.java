@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Min;
 public class StockRecord{
     private Long id;
     private product;
-    @coloumn(unique=true)
+    @Coloumn(unique=true)
     private  warehouse;
     @Min(0)
     private Integer currentQuantity;

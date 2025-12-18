@@ -1,4 +1,6 @@
 package com.example.demo.model;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.Min;
 
 public class ConsumptionLog{
     private Long id;

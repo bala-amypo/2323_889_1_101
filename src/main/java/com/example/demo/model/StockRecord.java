@@ -1,5 +1,6 @@
 package com.example.demo.model;
 import jakarta.persistence.Id;
+import jakarta.persistence.Coloumn;
 import jakarta.validation.constraints.Min;
 
 

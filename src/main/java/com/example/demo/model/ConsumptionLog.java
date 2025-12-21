@@ -1,15 +1,27 @@
 package com.example.demo.model;
-import jakarta.persistence.Id;
-import jakarta.validation.constraints.Min;
 
-public class ConsumptionLog{
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "consumption_logs")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ConsumptionLog {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private stockRecord;
-    @Min(1)          
+
+    @ManyToOne(optional = false)
+    private StockRecord stockRecord;
+
     private Integer consumedQuantity;
-    private Integer reorderThreshold;
-    private LocalDateTime lastUpdated;
-    
-     
-    
+
+    private LocalDate consumedDate;
 }

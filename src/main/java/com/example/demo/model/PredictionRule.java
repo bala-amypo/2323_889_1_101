@@ -1,17 +1,31 @@
 package com.example.demo.model;
-import jakarta.persistence.Id;
-import jakarta.persistence.Coloumn;
 
-import jakarta.validation.constraints.Min;
+import jakarta.persistence.*;
+import lombok.*;
 
-public class PredictionRule{
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "prediction_rules", uniqueConstraints = @UniqueConstraint(columnNames = "ruleName"))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PredictionRule {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Coloumn(unique=true)
+
+    @Column(nullable = false, unique = true)
     private String ruleName;
-    @Min(1)
+
     private Integer averageDaysWindow;
+
     private Integer minDailyUsage;
+
     private Integer maxDailyUsage;
+
     private LocalDateTime createdAt;
-    
 }

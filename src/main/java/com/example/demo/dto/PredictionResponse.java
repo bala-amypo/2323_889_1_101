@@ -1,13 +1,15 @@
 package com.example.demo.dto;
 
-public class PredictionResponse {
-    private double value;
+import java.time.LocalDate;
 
-    public PredictionResponse(double value) {
-        this.value = value;
+public class PredictionResponse {
+    private LocalDate date;
+
+    public PredictionResponse(LocalDate date) {
+        this.date = date;
     }
 
-    public double getValue() {
-        return value;
+    public LocalDate getDate() {
+        return date;
     }
 }

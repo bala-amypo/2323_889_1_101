@@ -6,17 +6,21 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDate;
 import java.util.List;
 
-public interface ConsumptionLogRepository extends JpaRepository<ConsumptionLog, Long> {
+public interface ConsumptionLogRepository
+        extends JpaRepository<ConsumptionLog, Long> {
 
+    // Used by services + tests
     List<ConsumptionLog> findByStockRecordId(Long stockRecordId);
 
-    /* ===== METHODS REQUIRED BY TESTS ===== */
-
-    List<ConsumptionLog> findByStockRecordIdAndConsumedDateBetween(
-            Long stockRecordId,
-            LocalDate startDate,
-            LocalDate endDate
+    // Used by tests
+    List<ConsumptionLog>
+    findByStockRecordIdAndConsumedDateBetween(
+            long stockRecordId,
+            LocalDate start,
+            LocalDate end
     );
 
-    List<ConsumptionLog> findByStockRecordIdOrderByConsumedDateDesc(Long stockRecordId);
+    // Used by tests
+    List<ConsumptionLog>
+    findByStockRecordIdOrderByConsumedDateDesc(long stockRecordId);
 }

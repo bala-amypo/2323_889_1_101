@@ -79,8 +79,8 @@ public class UserServiceImpl implements UserService {
         var roles =
                 user.getRoles().stream().map(Role::name).toList();
 
-        String token =
-                jwtProvider.generateToken(user.getId(), user.getEmail(), roles);
+        String token = jwtProvider.generateToken(user.getEmail());
+
 
         return new AuthResponse(
                 token,

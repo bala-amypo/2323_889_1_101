@@ -11,6 +11,6 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
-                .addServersItem(new Server().url("https://9241.pro604cr.amypo.ai/"));
+                .addServersItem(new Server().url("https://9289.pro604cr.amypo.ai/"));
     }
 }

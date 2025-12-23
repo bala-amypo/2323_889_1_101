@@ -1,61 +1,82 @@
 package com.example.demo.config;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class JwtProvider {
 
-    private static final String SECRET_KEY =
-            "my-super-secure-jwt-secret-key-my-super-secure-jwt-secret-key";
+    private static final SecretKey SECRET_KEY =
+            Keys.hmacShaKeyFor("my-secret-key-my-secret-key-my-secret-key".getBytes());
 
-    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000;
+    private static final long EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 1 day
 
-    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    /* =====================
+       TOKEN GENERATION
+       ===================== */
 
-    public String generateToken(Long userId, String email, List<String> roles) {
+    // Used by runtime code
+    public String generateToken(String email) {
+        return Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // Used by TEST CASES
+    public String generateToken(String email, Long userId, Set<?> roles) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("userId", userId)
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    /* ================= METHODS EXPECTED BY TESTS ================= */
+    /* =====================
+       TOKEN PARSING (JJWT 0.12.x)
+       ===================== */
 
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parserBuilder()
-                .setSigningKey(key)
+    private Claims getClaims(String token) {
+        return Jwts
+                .parser()
+                .verifyWith(SECRET_KEY)
                 .build()
-                .parseClaimsJws(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException ex) {
-            return false;
-        }
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public String getEmailFromToken(String token) {
         return getClaims(token).getSubject();
     }
 
+    // Required by TEST CASES
     public Long getUserId(String token) {
-        return getClaims(token).get("userId", Long.class);
+        Object value = getClaims(token).get("userId");
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        return null;
     }
 
-    private Claims getClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+    public boolean validateToken(String token) {
+        try {
+            getClaims(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

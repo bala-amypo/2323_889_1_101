@@ -5,28 +5,34 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private final UserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtProvider jwtProvider) {
+    public JwtAuthenticationFilter(
+            JwtProvider jwtProvider,
+            UserDetailsService userDetailsService) {
         this.jwtProvider = jwtProvider;
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+            FilterChain filterChain)
+            throws ServletException, IOException {
 
         String header = request.getHeader("Authorization");
 
@@ -36,31 +42,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwtProvider.validateToken(token)) {
 
                 String email = jwtProvider.getEmailFromToken(token);
+                UserDetails userDetails =
+                        userDetailsService.loadUserByUsername(email);
 
-                @SuppressWarnings("unchecked")
-                List<String> roles =
-                        (List<String>) io.jsonwebtoken.Jwts.parserBuilder()
-                                .setSigningKey(
-                                        io.jsonwebtoken.security.Keys.hmacShaKeyFor(
-                                                "my-super-secure-jwt-secret-key-my-super-secure-jwt-secret-key"
-                                                        .getBytes()
-                                        )
-                                )
-                                .build()
-                                .parseClaimsJws(token)
-                                .getBody()
-                                .get("roles");
-
-                var authorities = roles.stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
-
-                var authentication =
+                UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                email, null, authorities);
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
 
-                SecurityContextHolder
-                        .getContext()
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request));
+
+                SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
             }
         }

@@ -1,9 +1,7 @@
 package com.example.demo.util;
 
-import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class DateUtil {
-    public static LocalDateTime now() {
-        return LocalDateTime.now();
-    }
+    public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 }

@@ -1,15 +1,15 @@
-package com.example.demo.controller;
+// package com.example.demo.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+// import org.springframework.http.HttpStatus;
+// import org.springframework.http.ResponseEntity;
+// import org.springframework.web.bind.annotation.GetMapping;
+// import org.springframework.web.bind.annotation.RestController;
 
-@RestController
-public class RootController {
+// @RestController
+// public class RootController {
 
-    @GetMapping("/")
-    public ResponseEntity<Void> root() {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-    }
-}
+//     @GetMapping("/")
+//     public ResponseEntity<Void> root() {
+//         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+//     }
+// }

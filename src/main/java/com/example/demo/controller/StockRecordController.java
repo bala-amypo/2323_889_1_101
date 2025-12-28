@@ -39,5 +39,4 @@ public class StockRecordController {
     public List<StockRecord> getByWarehouse(@PathVariable Long warehouseId) {
         return stockRecordService.getRecordsByWarehouse(warehouseId);
     }
-}package com.example.demo.controller;
-
+}

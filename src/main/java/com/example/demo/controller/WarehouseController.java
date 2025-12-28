@@ -30,5 +30,4 @@ public class WarehouseController {
     public Warehouse getWarehouse(@PathVariable Long id) {
         return warehouseService.getWarehouse(id);
     }
-}package com.example.demo.controller;
-
+}

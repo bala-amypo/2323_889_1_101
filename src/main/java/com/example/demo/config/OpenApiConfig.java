@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 @Configuration
-public class SwaggerConfig {
+public class OpenApiConfig {
 
     @Bean
     public OpenAPI customOpenAPI() {
@@ -19,7 +19,7 @@ public class SwaggerConfig {
         return new OpenAPI()
                 // ✅ FORCE HTTPS SERVER (CRITICAL FIX)
                 .servers(List.of(
-                        new Server().url("https://9094.408procr.amypo.ai/")
+                        new Server().url("https://9289.pro604cr.amypo.ai/")
                 ))
 
                 // ✅ JWT SECURITY

@@ -8,5 +8,4 @@ import java.util.Optional;
 public interface PredictionRuleRepository extends JpaRepository<PredictionRule, Long> {
 
     Optional<PredictionRule> findByRuleName(String ruleName);
-}package com.example.demo.repository;
-
+}

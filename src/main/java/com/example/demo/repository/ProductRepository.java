@@ -1,11 +1,13 @@
-package com.example.demo.repository;
+]package com.example.demo.repository;
 
-import com.example.demo.model.Product;
+import com.example.demo.model.StockRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Optional;
+import java.util.List;
 
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface StockRecordRepository extends JpaRepository<StockRecord, Long> {
 
-    Optional<Product> findBySku(String sku);
+    List<StockRecord> findByProductId(Long productId);
+
+    List<StockRecord> findByWarehouseId(Long warehouseId);
 }

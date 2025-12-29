@@ -26,4 +26,3 @@ public class Warehouse {
 
     private LocalDateTime createdAt;
 }
-

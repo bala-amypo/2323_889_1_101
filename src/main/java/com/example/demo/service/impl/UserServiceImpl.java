@@ -9,64 +9,91 @@ import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
 
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private JwtProvider jwtProvider;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
+
+    public UserServiceImpl(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtProvider jwtProvider) {
+
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtProvider = jwtProvider;
+    }
 
     @Override
-    public User registerUser(UserRegisterDto dto) {
-        if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+    public User register(UserRegisterDto dto) {
+
+        if (dto.getName() == null || dto.getName().isBlank()) {
+            throw new IllegalArgumentException("name cannot be empty");
         }
-        
-        User user = new User();
-        user.setName(dto.getName());
-        user.setEmail(dto.getEmail());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setCreatedAt(LocalDateTime.now());
-        
-        Set<Role> roles = new HashSet<>();
-        if ("ADMIN".equalsIgnoreCase(dto.getRole())) {
-            roles.add(Role.ROLE_ADMIN);
-        } else {
-            roles.add(Role.ROLE_USER);
+        if (dto.getPassword() == null || dto.getPassword().isBlank()) {
+            throw new IllegalArgumentException("password cannot be empty");
         }
-        user.setRoles(roles);
-        
+
+        userRepository.findByEmail(dto.getEmail())
+                .ifPresent(u -> {
+                    throw new IllegalArgumentException("email already exists");
+                });
+
+        Set<Role> roles = dto.getRoles() == null || dto.getRoles().isEmpty()
+                ? Set.of(Role.ROLE_USER)
+                : dto.getRoles().stream()
+                    .map(Role::valueOf)
+                    .collect(Collectors.toSet());
+
+        User user = User.builder()
+                .name(dto.getName())
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode(dto.getPassword()))
+                .roles(roles)
+                .createdAt(LocalDateTime.now())
+                .build();
+
         return userRepository.save(user);
     }
-    
+
     @Override
     public AuthResponse login(AuthRequest request) {
-         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-             throw new BadCredentialsException("Invalid password");
-         }
-         
-         Set<String> roles = user.getRoles().stream()
-                 .map(Enum::name)
-                 .collect(Collectors.toSet());
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
 
-         String token = jwtProvider.generateToken(user.getEmail(), user.getId(), roles);
-         return new AuthResponse(token);
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid credentials");
+        }
+
+        var roles =
+                user.getRoles().stream().map(Role::name).toList();
+
+        String token =
+                jwtProvider.generateToken(user.getId(), user.getEmail(), roles);
+
+        return new AuthResponse(
+                token,
+                user.getId(),
+                user.getEmail(),
+                Set.copyOf(roles)
+        );
+    }
+
+    @Override
+    public User getByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
     }
 }
-

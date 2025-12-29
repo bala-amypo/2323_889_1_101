@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -31,6 +30,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User getByEmail(String email) {
+        // Implementation for the missing method
+        return userRepository.findByEmail(email); 
+    }
+
+    @Override
     public User createUser(User user) {
         return userRepository.save(user);
     }
@@ -47,20 +52,5 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long id) {
         User user = getUserById(id);
         userRepository.delete(user);
-    }
-
-    /**
-     * Example method that likely caused the error.
-     * Error was: java.lang.Long cannot be converted to java.lang.String
-     */
-    public String getUserIdentifier(Long id) {
-        User user = getUserById(id);
-        
-        // LINE 83: Fix applied here using String.valueOf()
-        // Previously, you might have been trying to return user.getId() directly
-        // where a String was expected.
-        String userIdAsString = String.valueOf(user.getId()); 
-        
-        return "USER_PREFIX_" + userIdAsString;
     }
 }

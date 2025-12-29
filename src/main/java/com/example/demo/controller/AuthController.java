@@ -27,5 +27,3 @@ public class AuthController {
         return userService.login(request);
     }
 }
-
-

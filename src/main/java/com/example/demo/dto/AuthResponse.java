@@ -5,15 +5,13 @@ import java.util.Set;
 public class AuthResponse {
 
     private String token;
-    private Long userId;
+    private Long userId;          // ✅ Long
     private String email;
     private Set<String> roles;
 
-    // Default constructor
     public AuthResponse() {
     }
 
-    // Full constructor
     public AuthResponse(String token, Long userId, String email, Set<String> roles) {
         this.token = token;
         this.userId = userId;
@@ -21,36 +19,19 @@ public class AuthResponse {
         this.roles = roles;
     }
 
-    // Getters & Setters
     public String getToken() {
         return token;
     }
 
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    public Long getUserId() {
+    public Long getUserId() {     // ✅ Long
         return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
     }
 
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
     public Set<String> getRoles() {
         return roles;
-    }
-
-    public void setRoles(Set<String> roles) {
-        this.roles = roles;
     }
 }

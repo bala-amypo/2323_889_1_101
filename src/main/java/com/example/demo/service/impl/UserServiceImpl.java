@@ -1,54 +1,99 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.config.JwtProvider;
 import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
+import com.example.demo.dto.UserRegisterDto;
+import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.security.JwtService;
 import com.example.demo.service.UserService;
-
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
 
-    public UserServiceImpl(UserRepository userRepository,
-                           JwtService jwtService,
-                           AuthenticationManager authenticationManager) {
+    public UserServiceImpl(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtProvider jwtProvider) {
+
         this.userRepository = userRepository;
-        this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtProvider = jwtProvider;
+    }
+
+    @Override
+    public User register(UserRegisterDto dto) {
+
+        if (dto.getName() == null || dto.getName().isBlank()) {
+            throw new IllegalArgumentException("name cannot be empty");
+        }
+        if (dto.getPassword() == null || dto.getPassword().isBlank()) {
+            throw new IllegalArgumentException("password cannot be empty");
+        }
+
+        userRepository.findByEmail(dto.getEmail())
+                .ifPresent(u -> {
+                    throw new IllegalArgumentException("email already exists");
+                });
+
+        Set<Role> roles = dto.getRoles() == null || dto.getRoles().isEmpty()
+                ? Set.of(Role.ROLE_USER)
+                : dto.getRoles().stream()
+                    .map(Role::valueOf)
+                    .collect(Collectors.toSet());
+
+        User user = User.builder()
+                .name(dto.getName())
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode(dto.getPassword()))
+                .roles(roles)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return userRepository.save(user);
     }
 
     @Override
     public AuthResponse login(AuthRequest request) {
 
-        // Authenticate user
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
-
-        // Fetch user from DB
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found")
-                );
+                        new ResourceNotFoundException("User not found"));
 
-        // Generate JWT token
-        String token = jwtService.generateToken(user);
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid credentials");
+        }
 
-        // Return response
-        return new AuthResponse(token);
+        var roles =
+                user.getRoles().stream().map(Role::name).toList();
+
+        String token =
+                jwtProvider.generateToken(user.getId(), user.getEmail(), roles);
+
+        return new AuthResponse(
+                token,
+                user.getId(),
+                user.getEmail(),
+                Set.copyOf(roles)
+        );
+    }
+
+    @Override
+    public User getByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
     }
 }

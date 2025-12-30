@@ -1,82 +1,49 @@
-package com.example.demo.config;
+package com.example.demo.config; // Placing in config as requested by test MockBean path
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.security.Key;
+import java.util.*;
 
 @Component
 public class JwtProvider {
+    @Value("${jwt.secret}")
+    private String secret;
+    
+    @Value("${jwt.expiration}")
+    private long expiration;
 
-    private static final SecretKey SECRET_KEY =
-            Keys.hmacShaKeyFor("my-secret-key-my-secret-key-my-secret-key".getBytes());
-
-    private static final long EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 1 day
-
-    /* =====================
-       TOKEN GENERATION
-       ===================== */
-
-    // Used by runtime code
-    public String generateToken(String email) {
-        return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
-                .compact();
+    private Key getSignKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // Used by TEST CASES
-    public String generateToken(String email, Long userId, Set<?> roles) {
+    public String generateToken(String email, Long userId, Set<String> roles) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("userId", userId)
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
-    }
-
-    /* =====================
-       TOKEN PARSING (JJWT 0.12.x)
-       ===================== */
-
-    private Claims getClaims(String token) {
-        return Jwts
-                .parser()
-                .verifyWith(SECRET_KEY)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-
-    public String getEmailFromToken(String token) {
-        return getClaims(token).getSubject();
-    }
-
-    // Required by TEST CASES
-    public Long getUserId(String token) {
-        Object value = getClaims(token).get("userId");
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        return null;
     }
 
     public boolean validateToken(String token) {
         try {
-            getClaims(token);
+            Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token);
             return true;
-        } catch (Exception e) {
-            return false;
-        }
+        } catch (Exception e) { return false; }
+    }
+
+    public String getEmailFromToken(String token) {
+        return Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody().getSubject();
+    }
+    
+    public Long getUserId(String token) {
+        try {
+            return Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody().get("userId", Long.class);
+        } catch (Exception e) { return null; }
     }
 }

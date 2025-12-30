@@ -1,26 +1,24 @@
-package com.example.demo.repository;
+package com.example.demo.model;
 
-import com.example.demo.model.ConsumptionLog;
-import org.springframework.data.jpa.repository.JpaRepository;
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
 
-import java.time.LocalDate;
-import java.util.List;
+@Entity
+@Table(name = "warehouses")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Warehouse {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(unique = true)
+    private String warehouseName;
+    private String location;
+    private LocalDateTime createdAt;
 
-public interface ConsumptionLogRepository
-        extends JpaRepository<ConsumptionLog, Long> {
-
-    // Used by services + tests
-    List<ConsumptionLog> findByStockRecordId(Long stockRecordId);
-
-    // Used by tests
-    List<ConsumptionLog>
-    findByStockRecordIdAndConsumedDateBetween(
-            long stockRecordId,
-            LocalDate start,
-            LocalDate end
-    );
-
-    // Used by tests
-    List<ConsumptionLog>
-    findByStockRecordIdOrderByConsumedDateDesc(long stockRecordId);
+    @PrePersist
+    public void onCreate() { createdAt = LocalDateTime.now(); }
 }

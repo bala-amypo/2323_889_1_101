@@ -1,109 +1,48 @@
 package com.example.demo.service.impl;
 
 import com.example.demo.exception.ResourceNotFoundException;
-import com.example.demo.model.Product;
-import com.example.demo.model.StockRecord;
-import com.example.demo.model.Warehouse;
-import com.example.demo.repository.ProductRepository;
-import com.example.demo.repository.StockRecordRepository;
-import com.example.demo.repository.WarehouseRepository;
+import com.example.demo.model.*;
+import com.example.demo.repository.*;
 import com.example.demo.service.StockRecordService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class StockRecordServiceImpl implements StockRecordService {
-
-    private final StockRecordRepository stockRecordRepository;
-    private final ProductRepository productRepository;
-    private final WarehouseRepository warehouseRepository;
-
-    public StockRecordServiceImpl(
-            StockRecordRepository stockRecordRepository,
-            ProductRepository productRepository,
-            WarehouseRepository warehouseRepository) {
-
-        this.stockRecordRepository = stockRecordRepository;
-        this.productRepository = productRepository;
-        this.warehouseRepository = warehouseRepository;
-    }
-
-    /* ================== CORE METHODS ================== */
+    private final StockRecordRepository repo;
+    private final ProductRepository productRepo;
+    private final WarehouseRepository warehouseRepo;
 
     @Override
     public StockRecord createStockRecord(Long productId, Long warehouseId, StockRecord record) {
+        Product p = productRepo.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        Warehouse w = warehouseRepo.findById(warehouseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found"));
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Product not found"));
-
-        Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Warehouse not found"));
-
-        stockRecordRepository.findByProductId(productId).forEach(existing -> {
-            if (existing.getWarehouse().getId().equals(warehouseId)) {
-                throw new IllegalArgumentException("StockRecord already exists");
-            }
-        });
-
-        if (record.getCurrentQuantity() < 0) {
-            throw new IllegalArgumentException("currentQuantity must be >= 0");
+        if (repo.findByProductIdAndWarehouseId(productId, warehouseId).isPresent()) {
+            throw new IllegalArgumentException("StockRecord already exists");
         }
 
-        if (record.getReorderThreshold() <= 0) {
-            throw new IllegalArgumentException("reorderThreshold must be > 0");
-        }
-
-        record.setProduct(product);
-        record.setWarehouse(warehouse);
-        record.setLastUpdated(LocalDateTime.now());
-
-        return stockRecordRepository.save(record);
+        record.setProduct(p);
+        record.setWarehouse(w);
+        return repo.save(record);
     }
 
     @Override
     public StockRecord getStockRecord(Long id) {
-        return stockRecordRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("StockRecord not found"));
+        return repo.findById(id).orElseThrow(() -> new ResourceNotFoundException("StockRecord not found"));
     }
 
     @Override
     public List<StockRecord> getRecordsBy_product(Long productId) {
-        return stockRecordRepository.findByProductId(productId);
+        return repo.findByProductId(productId);
     }
 
     @Override
     public List<StockRecord> getRecordsByWarehouse(Long warehouseId) {
-        return stockRecordRepository.findByWarehouseId(warehouseId);
-    }
-
-    /* ================== STRING OVERLOADS (FOR TESTS) ================== */
-
-    @Override
-    public StockRecord createStockRecord(String productId, String warehouseId, StockRecord record) {
-        return createStockRecord(
-                Long.parseLong(productId),
-                Long.parseLong(warehouseId),
-                record
-        );
-    }
-
-    @Override
-    public StockRecord getStockRecord(String id) {
-        return getStockRecord(Long.parseLong(id));
-    }
-
-    @Override
-    public List<StockRecord> getRecordsBy_product(String productId) {
-        return getRecordsBy_product(Long.parseLong(productId));
-    }
-
-    @Override
-    public List<StockRecord> getRecordsByWarehouse(String warehouseId) {
-        return getRecordsByWarehouse(Long.parseLong(warehouseId));
+        return repo.findByWarehouseId(warehouseId);
     }
 }
